@@ -61,12 +61,11 @@ float refresh_rate = 20; //ms
 
 
 /* -------------------WI-FI PASSWORD--------------- */
-//const char * ssid = "AndroidAP";
-//const char * password = "123456789";
+const char * ssid = "AndroidAP";
+const char * password = "123456789";
 //const char * ssid = "NOS-DB99";
 //const char * password = "JK7JE5VG";
-const char* ssid = "ZON-FDC0";
-const char* password = "caralhoalex";
+
 
 
 //char* will store the char as a "static" array, 
