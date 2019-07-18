@@ -1,0 +1,110 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+
+</head>
+
+<body onload="javascript:init()">
+    <!-- Adding a slider for controlling data rate -->
+    <div>
+        <input type="range" min="1" max="100" value="20" id="dataRateSlider" oninput="sendDataRate()" />
+        <label for="dataRateSlider" id="dataRateLabel">Refresh Rate: 20 ms</label>
+    </div>
+    <div>
+        <input type="radio" name="filters" value="unfiltered" id="filterTypeFiltered" oninput="sendFilterType()"
+            checked> Unfiltered
+        <input type="radio" name="filters" value="filtered" oninput="sendFilterType()"> Filtered
+
+    </div>
+    <div>
+    
+             <label id="BPM_PLACEHOLDER">BPM: </label>
+        </form>
+    </div>
+    <hr />
+    <div>
+        <canvas id="line-chart" style="width: 1600px; height: 900px"></canvas>
+    </div>
+
+    <script>
+        var webSocket_instance, data_plot
+        var maxDataPoints = 160;
+     
+        function removeData() {
+            data_plot.data.labels.shift();
+            data_plot.data.datasets[0].data.shift();
+        }
+
+        function addData(label, data) {
+            if (data_plot.data.labels.length > maxDataPoints) removeData();
+            data_plot.data.labels.push(label);
+            data_plot.data.datasets[0].data.push(data);
+            data_plot.update();
+        }
+
+        function init() {
+            webSocket_instance = new WebSocket('ws://' + window.location.hostname + ':81/');
+            data_plot = new Chart(document.getElementById("line-chart"), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        label: "Pulses",
+                        borderColor: "#FF1748",
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    animation: {
+                        duration: 0 // general animation time
+                    },
+                    hover: {
+                        animationDuration: 0 // duration of animations when hovering an item
+                    },
+                    responsiveAnimationDuration: 0, // animation duration after a resize
+                    scales: {
+                        xAxes: [{
+                            display: false
+                        }],
+                        yAxes: [{
+                            display: true,
+                            ticks: {
+                                min: -300,
+                                max: 4100
+                            }
+
+                        }]
+                    }
+                }
+            });
+            webSocket_instance.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                var time_x = Date.now();
+                addData(time_x, data.value);
+                updateBPM(data.bpm);
+                // document.getElementById("BPM_text").innerHTML = "BPM: " + bpm.toFixed(0);
+            }
+        }
+
+        function sendDataRate() {
+            var dataRate = document.getElementById("dataRateSlider").value;
+            webSocket_instance.send(dataRate);
+            dataRate = 1.0 * dataRate;
+            document.getElementById("dataRateLabel").innerHTML = "Refresh Rate: " + dataRate.toFixed(0) + "ms";
+        }
+
+        function sendFilterType() {
+            var filterType = document.getElementById("filterTypeFiltered").value;
+            webSocket_instance.send(filterType);
+        }
+        function updateBPM(bpm){
+
+            document.getElementById("BPM_PLACEHOLDER").innerHTML = "BPM: " + bpm; 
+        }
+    </script>
+</body>
+
+</html>

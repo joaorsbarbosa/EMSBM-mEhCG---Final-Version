@@ -1,0 +1,81 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@1.8.0"></script>
+</head>
+
+<body onload="javascript:init()">
+    <div>
+
+        <canvas id="line-chart" width="800" height="450"></canvas>
+    </div>
+
+    <script>
+        //function in charge of sending new data to the plot
+        var webSocket_instance, data_plot
+
+        function addData(label, data) {
+            data_plot.data.labels.push(label);
+            data_plot.data.datasets[0].data.push(data);
+            data_plot.update();
+        }
+
+        function init() {
+            webSocket_instance = new WebSocket('ws://' + window.location.hostname + ':81');
+            data_plot = new Chart(document.getElementById("line-chart"), {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        data: [],
+                        label: "Heart Beat",
+                        borderColor: "#FF1748",
+                        fill: false
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Line chart (hotizontal scroll) sample'
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'realtime',
+                            realtime: {
+                                duration: 20000,
+                                refresh: 1000,
+                                delay: 2000,
+                                onRefresh: onRefresh
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'value'
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        mode: 'nearest',
+                        intersect: false
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: false
+                    }
+                }
+            });
+            //gets new JSON formated data from websocket and adds the time -->
+            webSocket_instance.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                var time_x = Date.now();
+                addData(time_x, data.value);
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
